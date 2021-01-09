@@ -517,8 +517,10 @@ impl Config {
         // this figured out.
         // [1]: http://doc.crates.io/build-script.html#outputs-of-the-build-script
 
+        println!("about to create temp dir");
         let tmp = tempfile::Builder::new().prefix("prost-build").tempdir()?;
         let descriptor_set = tmp.path().join("prost-descriptor-set");
+        println!("created temp dir");
 
         let mut cmd = Command::new(protoc());
         cmd.arg("--include_imports")
@@ -538,16 +540,23 @@ impl Config {
             cmd.arg(proto.as_ref());
         }
 
+        println!("about to read output 3");
+        println!("cmd {:?}", cmd);
         let output = cmd.output()?;
+        println!("read output");
         if !output.status.success() {
             return Err(Error::new(
                 ErrorKind::Other,
                 format!("protoc failed: {}", String::from_utf8_lossy(&output.stderr)),
             ));
         }
+        println!("read output");
 
+        println!("about to read descriptor_set");
         let buf = fs::read(descriptor_set)?;
+        println!("about to decode descriptor_set");
         let descriptor_set = FileDescriptorSet::decode(&*buf)?;
+        println!("decoded descriptor_set");
 
         let modules = self.generate(descriptor_set.file)?;
         for (module, content) in modules {
@@ -565,7 +574,9 @@ impl Config {
                 trace!("unchanged: {:?}", filename);
             } else {
                 trace!("writing: {:?}", filename);
+                println!("about to write");
                 fs::write(output_path, content)?;
+                println!("wrote");
             }
         }
 
